@@ -2163,8 +2163,8 @@ static InOutBase * create_newXterm( void )
       ( void ) setgid( getgid() );
       execlp( "xterm", "xterm", buf, "+sb",
               "-fg", "white",
-              "-bg", "black", "-fn", "fixed", "-T", "HB-XTERM Window", NULL );
-      exit( 0 );
+              "-bg", "black", "-fn", "fixed", "-T", "HB-XTERM Window", ( char * ) NULL );
+      _exit( EXIT_FAILURE );
    }
    close( masterfd );
    return create_ioBase( "xterm", slavefd, slavefd, slavefd, termpid );

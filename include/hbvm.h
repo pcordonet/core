@@ -99,8 +99,8 @@ extern HB_EXPORT PHB_SYMB hb_vmProcessDynLibSymbols( PHB_SYMB pSymbols, HB_USHOR
    extern const char *  hb_vmFindModuleSymbolName( PHB_SYMB pSym );
    extern HB_BOOL       hb_vmFindModuleSymbols( PHB_SYMB pSym, PHB_SYMB * pSymbols, HB_USHORT * puiSymbols );
    extern PHB_SYMB      hb_vmGetRealFuncSym( PHB_SYMB pSym );
-   extern void          hb_vmSetFunction( PHB_SYMB pOldSym, PHB_SYMB pNewSym );
-   extern void          hb_vmSetDynFunc( PHB_DYNS pDynSym );
+   extern HB_EXPORT void hb_vmSetFunction( PHB_SYMB pOldSym, PHB_SYMB pNewSym );
+   extern HB_EXPORT void hb_vmSetDynFunc( PHB_DYNS pDynSym );
 
    extern void          hb_vmEnumRelease( PHB_ITEM pBase, PHB_ITEM pValue );
    extern HB_BOOL       hb_vmMsgReference( PHB_ITEM pObject, PHB_DYNS pMessage, PHB_DYNS pAccMsg ); /* create extended message reference */
@@ -130,6 +130,8 @@ extern HB_EXPORT HB_BOOL   hb_vmTryEval( PHB_ITEM * pResult, PHB_ITEM pItem, HB_
 extern HB_EXPORT HB_BOOL   hb_vmIsActive( void );
 extern HB_EXPORT HB_BOOL   hb_vmIsReady( void );
 
+extern HB_EXPORT HB_BOOL   hb_vmSetKeyPool( HB_BOOL fEnable );
+
 /* Return values of hb_vmRequestQuery() */
 #define HB_QUIT_REQUESTED     1     /* immediately quit the application */
 #define HB_BREAK_REQUESTED    2     /* break to nearest RECOVER/END sequence */
@@ -150,6 +152,7 @@ extern HB_EXPORT PHB_ITEM hb_vmEvalBlock( PHB_ITEM pBlockItem ); /* executes pas
 extern HB_EXPORT PHB_ITEM hb_vmEvalBlockV( PHB_ITEM pBlockItem, HB_ULONG ulArgCount, ... );
 extern HB_EXPORT PHB_ITEM hb_vmEvalBlockOrMacro( PHB_ITEM pItem ); /* executes codeblock or macro pointed by given item */
 extern HB_EXPORT void     hb_vmDestroyBlockOrMacro( PHB_ITEM pItem ); /* destroy codeblock or macro in given item */
+extern HB_EXPORT PHB_ITEM hb_vmCompileMacro( const char * szExpr, PHB_ITEM pDest ); /* compile given expression and return macro pointer item or NULL */
 
 /* Push */
 extern HB_EXPORT void     hb_vmPush( PHB_ITEM pItem );     /* pushes a generic item onto the stack */

@@ -188,7 +188,23 @@
 #     if defined( HB_OS_WIN_64 )
 #        pragma warning( disable : 4267 )
 #     endif
-#  elif defined( __MINGW32__ )
+#  elif defined( __clang__ )  && defined( __clang_major__ ) && __clang_major__ >= 13
+#     pragma clang diagnostic push
+#     pragma clang diagnostic ignored "-Wunused-but-set-variable"
+#     if __clang_major__ >= 15
+#        pragma clang diagnostic ignored "-Wgnu-null-pointer-arithmetic"
+#     endif
+#  elif defined( __GNUC__ ) && ( __GNUC__ > 6 || ( __GNUC__ == 6 && __GNUC_MINOR__ >= 1 ) )
+#     pragma GCC diagnostic push
+#     pragma GCC diagnostic ignored "-Warray-bounds"
+#     if __GNUC__ >= 11
+#        pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#     endif /* __GNUC__ >= 11 */
+#     if __GNUC__ >= 14
+#        pragma GCC diagnostic ignored "-Walloc-size"
+#     endif /* __GNUC__ >= 14 */
+#  endif
+#  if defined( __MINGW32__ )
 #     if ! defined( USE_DL_PREFIX ) && ! defined( HB_FM_DLMT_ALLOC )
 #        define USE_DL_PREFIX
 #     endif
@@ -224,6 +240,10 @@
 #     endif
 #  elif defined( _MSC_VER )
 #     pragma warning( pop )
+#  elif defined( __clang__ ) && defined( __clang_major__ ) && __clang_major__ >= 13
+#     pragma clang diagnostic pop
+#  elif defined( __GNUC__ ) && ( __GNUC__ > 6 || ( __GNUC__ == 6 && __GNUC_MINOR__ >= 1 ) )
+#     pragma GCC diagnostic pop
 #  endif
 #  if defined( HB_FM_DLMT_ALLOC )
 #     define malloc( n )         mspace_malloc( hb_mspace(), ( n ) )
@@ -506,8 +526,9 @@ static void dlmalloc_destroy( void )
 void hb_xinit_thread( void )
 {
 #if defined( HB_FM_DLMT_ALLOC )
+#if defined( hb_stack )
    HB_STACK_TLS_PRELOAD
-
+#endif
    if( hb_stack.allocator == NULL )
    {
       HB_FM_LOCK();
@@ -520,7 +541,9 @@ void hb_xinit_thread( void )
 void hb_xexit_thread( void )
 {
 #if defined( HB_FM_DLMT_ALLOC )
+#if defined( hb_stack )
    HB_STACK_TLS_PRELOAD
+#endif
    PHB_MSPACE pm = ( PHB_MSPACE ) hb_stack.allocator;
 
    if( pm )
@@ -1502,7 +1525,9 @@ HB_SIZE hb_xquery( int iMode )
 
       case HB_MEM_STACK_TOP:  /* Harbour extension (Total items currently on the stack) */
       {
+#if defined( hb_stackTopOffset )
          HB_STACK_TLS_PRELOAD
+#endif
          nResult = hb_stackTopOffset();
          break;
       }
@@ -1544,7 +1569,9 @@ HB_BOOL hb_xtraced( void )
 
 HB_FUNC( __FM_ALLOCLIMIT )
 {
-   HB_STACK_TLS_PRELOAD;
+#if defined( hb_retns ) || defined( hb_retni )
+   HB_STACK_TLS_PRELOAD
+#endif
    hb_xclean();
 #if defined( HB_FM_DLMT_ALLOC )
    hb_retns( mspace_footprint_limit( hb_mspace() ) );

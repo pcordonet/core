@@ -1135,7 +1135,7 @@ typedef void * PHB_MACRO;
 extern HB_EXPORT void         hb_macroGetValue( PHB_ITEM pItem, int iContext, int flags ); /* retrieve results of a macro expansion */
 extern           void         hb_macroSetValue( PHB_ITEM pItem, int flags ); /* assign a value to a macro-expression item */
 extern           void         hb_macroPushReference( PHB_ITEM pItem ); /* push reference to given expression */
-extern           void         hb_macroTextValue( PHB_ITEM pItem ); /* macro text substitution */
+extern HB_EXPORT void         hb_macroTextValue( PHB_ITEM pItem ); /* macro text substitution */
 extern           void         hb_macroPushSymbol( PHB_ITEM pItem ); /* handle a macro function calls, e.g. var := &macro() */
 extern           void         hb_macroRun( PHB_MACRO pMacro ); /* executes pcode compiled by macro compiler */
 extern           PHB_MACRO    hb_macroCompile( const char * szString ); /* compile a string and return a pcode buffer */
@@ -1189,11 +1189,11 @@ extern HB_EXPORT char *       hb_verHarbour( void );         /* retrieves a newl
 extern HB_EXPORT char *       hb_verPCode( void );           /* retrieves a newly allocated buffer containing PCode version */
 extern HB_EXPORT char *       hb_verBuildDate( void );       /* retrieves a newly allocated buffer containing build date and time */
 extern HB_EXPORT void         hb_verBuildInfo( void );       /* display harbour, compiler, and platform versions to standard console */
-extern HB_EXPORT int          hb_verRevision( void );        /* retrieves source repository revision number */
+extern HB_EXPORT HB_MAXINT    hb_verRevision( void );        /* retrieves source repository revision number */
 extern HB_EXPORT const char * hb_verChangeLogID( void );     /* retrieves a static buffer containing ChangeLog ID string */
 extern HB_EXPORT const char * hb_verChangeLogLastEntry( void ); /* retrieves a static buffer containing ChangeLog last entry string */
 #if defined( HB_LEGACY_LEVEL4 )
-extern HB_EXPORT int          hb_verSvnID( void );           /* retrieves source repository revision number */
+extern HB_EXPORT HB_MAXINT    hb_verSvnID( void );           /* retrieves source repository revision number */
 extern HB_EXPORT const char * hb_verSvnChangeLogID( void );  /* retrieves a static buffer containing ChangeLog ID string */
 extern HB_EXPORT const char * hb_verSvnLastEntry( void );    /* retrieves a static buffer containing ChangeLog last entry string */
 #endif
@@ -1213,9 +1213,11 @@ extern HB_EXPORT HB_BOOL hb_iswin7( void );     /* return HB_TRUE if OS == Windo
 extern HB_EXPORT HB_BOOL hb_iswin8( void );     /* return HB_TRUE if OS == Windows 8 or newer */
 extern HB_EXPORT HB_BOOL hb_iswin81( void );    /* return HB_TRUE if OS == Windows 8.1 or newer */
 extern HB_EXPORT HB_BOOL hb_iswin10( void );    /* return HB_TRUE if OS == Windows 10 or newer */
+extern HB_EXPORT HB_BOOL hb_iswin11( void );    /* return HB_TRUE if OS == Windows 11 or newer */
 extern HB_EXPORT HB_BOOL hb_iswince( void );    /* return HB_TRUE if OS is Windows CE or Windows Mobile */
 extern HB_EXPORT HB_BOOL hb_iswinver( int iMajor, int iMinor, int iType, HB_BOOL fOrUpper );
 extern HB_EXPORT HB_BOOL hb_iswinsp( int iServicePackMajor, HB_BOOL fOrUpper );
+extern HB_EXPORT HB_BOOL hb_iswinbuild( int iBuildNum, HB_BOOL fOrUpper );
 
 extern HB_EXPORT HB_BOOL hb_printerIsReady( const char * pszPrinterName );
 
@@ -1226,11 +1228,13 @@ extern HB_EXPORT const char * hb_osDecodeCP( const char * szName, char ** pszFre
 
 extern HB_EXPORT char *       hb_osStrEncode( const char * pszName );
 extern HB_EXPORT char *       hb_osStrEncodeN( const char * pszName, HB_SIZE nLen );
+extern HB_EXPORT char *       hb_osStrEncode2( const char * pszName, char * pszBuffer, HB_SIZE nSize );
 extern HB_EXPORT char *       hb_osStrDecode( const char * pszName );
 extern HB_EXPORT char *       hb_osStrDecode2( const char * pszName, char * pszBuffer, HB_SIZE nSize );
 #if defined( HB_OS_WIN )
 extern HB_EXPORT HB_WCHAR *   hb_osStrU16Encode( const char * pszName );
 extern HB_EXPORT HB_WCHAR *   hb_osStrU16EncodeN( const char * pszName, HB_SIZE nLen );
+extern HB_EXPORT HB_WCHAR *   hb_osStrU16Encode2( const char * pszName, HB_WCHAR * pszBufferW, HB_SIZE nSize );
 extern HB_EXPORT char *       hb_osStrU16Decode( const HB_WCHAR * pszNameW );
 extern HB_EXPORT char *       hb_osStrU16Decode2( const HB_WCHAR * pszNameW, char * pszBuffer, HB_SIZE nSize );
 #endif

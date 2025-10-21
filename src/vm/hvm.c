@@ -254,6 +254,10 @@ static HB_ULONG    s_ulFreeSymbols = 0;/* number of free module symbols */
 static void *      s_hDynLibID = NULL; /* unique identifier to mark symbol tables loaded from dynamic libraries */
 static HB_BOOL     s_fCloneSym = HB_FALSE;/* clone registered symbol tables */
 
+#ifndef HB_GUI
+HB_BOOL s_fKeyPool = HB_TRUE;
+#endif
+
 /* main VM thread stack ID */
 static void * s_main_thread = NULL;
 
@@ -1328,7 +1332,7 @@ void hb_vmExecute( const HB_BYTE * pCode, PHB_SYMB pSymbols )
    HB_ULONG ulLastOpcode = 0; /* opcodes profiler support */
    HB_ULONG ulPastClock = 0;  /* opcodes profiler support */
 #endif
-#if ! defined( HB_GUI )
+#ifndef HB_GUI
    int * piKeyPolls = hb_stackKeyPolls();
 #endif
 
@@ -1353,10 +1357,11 @@ void hb_vmExecute( const HB_BYTE * pCode, PHB_SYMB pSymbols )
       }
 #endif
 
-#if ! defined( HB_GUI )
+#ifndef HB_GUI
       if( ! --( *piKeyPolls ) )
       {
-         hb_inkeyPoll();
+         if( s_fKeyPool )
+            hb_inkeyPoll();
          *piKeyPolls = 65536;
 
          /* IMHO we should have a _SET_ controlled by user
@@ -3160,17 +3165,17 @@ static void hb_vmNegate( void )
 #if -HB_VMINT_MAX > HB_VMINT_MIN
       if( pItem->item.asInteger.value < -HB_VMINT_MAX )
       {
-#if HB_VMLONG_MAX > HB_VMINT_MAX
-         HB_MAXINT nValue = ( HB_MAXINT ) pItem->item.asInteger.value;
-         pItem->type = HB_IT_LONG;
-         pItem->item.asLong.value = -nValue;
-         pItem->item.asLong.length = HB_LONG_EXPLENGTH( -nValue );
-#else
+#if HB_VMLONG_MAX == HB_VMINT_MAX
          double dValue = ( double ) pItem->item.asInteger.value;
          pItem->type = HB_IT_DOUBLE;
          pItem->item.asDouble.value = -dValue;
          pItem->item.asDouble.length = HB_DBL_LENGTH( -dValue );
          pItem->item.asDouble.decimal = 0;
+#else
+         HB_MAXINT nValue = ( HB_MAXINT ) pItem->item.asInteger.value;
+         pItem->type = HB_IT_LONG;
+         pItem->item.asLong.value = -nValue;
+         pItem->item.asLong.length = HB_LONG_EXPLENGTH( -nValue );
 #endif
       }
       else
@@ -5953,8 +5958,9 @@ void hb_vmProc( HB_USHORT uiParams )
 
    /* Poll the console keyboard */
 #if 0
-   #if ! defined( HB_GUI )
-      hb_inkeyPoll();
+   #ifndef HB_GUI
+      if( s_fKeyPool )
+         hb_inkeyPoll();
    #endif
 #endif
 
@@ -6015,8 +6021,9 @@ void hb_vmDo( HB_USHORT uiParams )
 
    /* Poll the console keyboard */
 #if 0
-   #if ! defined( HB_GUI )
-      hb_inkeyPoll();
+   #ifndef HB_GUI
+      if( s_fKeyPool )
+         hb_inkeyPoll();
    #endif
 #endif
 
@@ -6106,8 +6113,9 @@ void hb_vmSend( HB_USHORT uiParams )
 
    /* Poll the console keyboard */
 #if 0
-   #if ! defined( HB_GUI )
-      hb_inkeyPoll();
+   #ifndef HB_GUI
+      if( s_fKeyPool )
+         hb_inkeyPoll();
    #endif
 #endif
 
@@ -6307,6 +6315,8 @@ PHB_ITEM hb_vmEvalBlockOrMacro( PHB_ITEM pItem )
  */
 void hb_vmDestroyBlockOrMacro( PHB_ITEM pItem )
 {
+   HB_TRACE( HB_TR_DEBUG, ( "hb_vmDestroyBlockOrMacro(%p)", ( void * ) pItem ) );
+
    if( HB_IS_POINTER( pItem ) )
    {
       PHB_MACRO pMacro = ( PHB_MACRO ) hb_itemGetPtr( pItem );
@@ -6314,6 +6324,24 @@ void hb_vmDestroyBlockOrMacro( PHB_ITEM pItem )
          hb_macroDelete( pMacro );
    }
    hb_itemRelease( pItem );
+}
+
+/*
+ * compile given expression and return macro pointer item or NULL
+ */
+PHB_ITEM hb_vmCompileMacro( const char * szExpr, PHB_ITEM pDest )
+{
+   HB_TRACE( HB_TR_DEBUG, ( "hb_vmCompileMacro(%s,%p)", szExpr, pDest ) );
+
+   if( szExpr )
+   {
+      PHB_MACRO pMacro = hb_macroCompile( szExpr );
+      if( pMacro )
+         return hb_itemPutPtr( pDest, ( void * ) pMacro );
+   }
+   if( pDest )
+      hb_itemClear( pDest );
+   return NULL;
 }
 
 
@@ -6748,9 +6776,9 @@ void hb_vmPushNumber( double dNumber, int iDec )
       hb_vmPushDouble( dNumber, hb_stackSetStruct()->HB_SET_DECIMALS );
 }
 
-static int hb_vmCalcIntWidth( HB_MAXINT nNumber )
+static HB_USHORT hb_vmCalcIntWidth( HB_MAXINT nNumber )
 {
-   int iWidth;
+   HB_USHORT iWidth;
 
    if( nNumber <= -1000000000L )
    {
@@ -6790,7 +6818,7 @@ static void hb_vmPushIntegerConst( int iNumber )
 
    pItem->type = HB_IT_INTEGER;
    pItem->item.asInteger.value = iNumber;
-   pItem->item.asInteger.length = ( HB_USHORT ) hb_vmCalcIntWidth( iNumber );
+   pItem->item.asInteger.length = hb_vmCalcIntWidth( iNumber );
 }
 #else
 static void hb_vmPushLongConst( long lNumber )
@@ -6802,7 +6830,7 @@ static void hb_vmPushLongConst( long lNumber )
 
    pItem->type = HB_IT_LONG;
    pItem->item.asLong.value = ( HB_MAXINT ) lNumber;
-   pItem->item.asLong.length = ( HB_USHORT ) hb_vmCalcIntWidth( lNumber );
+   pItem->item.asLong.length = hb_vmCalcIntWidth( lNumber );
 }
 #endif
 
@@ -6851,7 +6879,7 @@ static void hb_vmPushLongLongConst( HB_LONGLONG llNumber )
 
    pItem->type = HB_IT_LONG;
    pItem->item.asLong.value = ( HB_MAXINT ) llNumber;
-   pItem->item.asLong.length = ( HB_USHORT ) hb_vmCalcIntWidth( llNumber );
+   pItem->item.asLong.length = hb_vmCalcIntWidth( llNumber );
 }
 #endif
 
@@ -12395,6 +12423,31 @@ HB_FUNC( __QUITCANCEL )
          }
       }
    }
+}
+
+HB_BOOL hb_vmSetKeyPool( HB_BOOL fEnable )
+{
+#ifndef HB_GUI
+   HB_BOOL fPrev = s_fKeyPool;
+   s_fKeyPool = fEnable;
+   return fPrev;
+#else
+   HB_SYMBOL_UNUSED( fEnable );
+   return HB_FALSE;
+#endif
+}
+
+HB_FUNC( __VMKEYPOOL )
+{
+   HB_STACK_TLS_PRELOAD
+
+#ifndef HB_GUI
+   hb_retl( s_fKeyPool );
+   if( HB_ISLOG( 1 ) )
+      s_fKeyPool = hb_parl( 1 );
+#else
+   hb_retl( HB_FALSE );
+#endif
 }
 
 HB_FUNC( __VMNOINTERNALS )

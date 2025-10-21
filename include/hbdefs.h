@@ -82,7 +82,7 @@
       #undef INT32_MIN
       #define INT32_MIN ((int32_t) (-INT32_MAX-1))
       #undef INT64_MIN
-      #define INT64_MIN (9223372036854775807i64-1)
+      #define INT64_MIN (-9223372036854775807i64-1)
       #undef INT64_MAX
       #define INT64_MAX 9223372036854775807i64
    #endif
@@ -511,6 +511,13 @@ typedef HB_U32       HB_SYMCNT;
 #  define HB_ULL( num )          num##ULL
 #endif
 
+#if LONGLONG_MAX < LONG_MAX
+   #if defined( __WATCOMC__ )
+      #error "Your Watcom C can't preprocess 64-bit constants, use HB_USER_CFLAGS=-za99 or upgrade/downgrade"
+   #else
+      #error "Your C compiler wrongly preprocess 64-bit constants"
+   #endif
+#endif
 
 /* HB_*_EXPLENGTH() macros are used by HVM to set the size of
  * math operations, HB_*_LENGTH() macros are used when new
@@ -599,7 +606,7 @@ typedef HB_U32 HB_FATTR;
 #endif
 
 /* type for file offsets */
-#if defined( HB_LONG_LONG_OFF ) || ULONG_MAX == ULONGLONG_MAX
+#if defined( HB_LONG_LONG_OFF ) || LONG_MAX == LONGLONG_MAX
    typedef HB_LONG HB_FOFFSET;
    /* we can add hack with double as work around what should
       effectively give 52bit file size limit */
@@ -632,10 +639,18 @@ typedef HB_U32 HB_FATTR;
 #  endif
 #endif
 
-#if defined( HB_OS_WIN )
+#if defined( HB_OS_WIN ) || defined( HB_OS_DOS ) || defined( HB_OS_OS2 )
    typedef wchar_t         HB_WCHAR;
+   typedef wchar_t         HB_WCHAR16;
+   typedef HB_I32          HB_WCHAR32;
+#elif defined( __WATCOMC__ )
+   typedef unsigned short  HB_WCHAR;
+   typedef unsigned short  HB_WCHAR16;
+   typedef HB_I32          HB_WCHAR32;
 #else
    typedef unsigned short  HB_WCHAR;
+   typedef unsigned short  HB_WCHAR16;
+   typedef wchar_t         HB_WCHAR32;
 #endif
 
 /* maximum length of double number in decimal representation:

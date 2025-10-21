@@ -125,6 +125,8 @@
 
    #xtranslate hb_argv( [<x,...>] )            => hb_CmdArgArgV( <x> )
 
+   #xtranslate hb_PIsByRef( @<!localVar!> )    => hb_IsByRef( @<localVar> )
+
    #xtranslate hb_iniSetComment( [<x,...>] )   => hb_SetIniComment( <x> )
    #xtranslate hb_iniRead( [<x,...>] )         => hb_ReadIni( <x> )
    #xtranslate hb_iniWrite( [<x,...>] )        => hb_WriteIni( <x> )
@@ -314,19 +316,19 @@
 
    /* xHarbour operators: IN, HAS, LIKE, >>, <<, |, &, ^^ */
    #translate ( <exp1> IN <exp2> )     => ( ( <exp1> ) $ ( <exp2> ) )
-   #translate ( <exp1> HAS <exp2> )    => hb_regexHas( <exp2>, <exp1> )
-   #translate ( <exp1> LIKE <exp2> )   => hb_regexLike( <exp2>, <exp1> )
-   #translate ( <exp1> \<\< <exp2> )   => hb_bitShift( <exp1>, <exp2> )
-   #translate ( <exp1> >> <exp2> )     => hb_bitShift( <exp1>, -( <exp2> ) )
+   #translate ( <exp1> HAS <exp2> )    => ( hb_regexHas( <exp2>, <exp1> ) )
+   #translate ( <exp1> LIKE <exp2> )   => ( hb_regexLike( <exp2>, <exp1> ) )
+   #translate ( <exp1> \<\< <exp2> )   => ( hb_bitShift( <exp1>, <exp2> ) )
+   #translate ( <exp1> >> <exp2> )     => ( hb_bitShift( <exp1>, -( <exp2> ) ) )
    /* NOTE: These macros can break some valid Harbour/Clipper constructs,
             so they are disabled by default. Enable them with care, or
             even better to switch to use HB_BIT*() functions directly.
             They are optimized by Harbour compiler the same way (and even
             more) as these C-like operators, without any bad side-effects. */
    #if defined( XHB_BITOP )
-      #translate ( <exp1> | <exp2> )      => xhb_bitOr( <exp1>, <exp2> )
-      #translate ( <exp1> & <exp2> )      => xhb_bitAnd( <exp1>, <exp2> )
-      #translate ( <exp1> ^^ <exp2> )     => xhb_bitXor( <exp1>, <exp2> )
+      #translate ( <exp1> | <exp2> )      => ( xhb_bitOr( <exp1>, <exp2> ) )
+      #translate ( <exp1> & <exp2> )      => ( xhb_bitAnd( <exp1>, <exp2> ) )
+      #translate ( <exp1> ^^ <exp2> )     => ( xhb_bitXor( <exp1>, <exp2> ) )
    #endif
 
    #command @ <row>, <col> PROMPT <prompt> [ MESSAGE <msg> ] [ COLOR <color> ] => ;
@@ -383,6 +385,8 @@
    #xtranslate hbConsoleUnlock()               => hb_gtUnlock()
 
    #xtranslate hb_CmdArgArgV( [<x,...>] )      => hb_argv( <x> )
+
+   #xtranslate hb_IsByRef( @<!localVar!> )     => hb_PIsByRef( @<localVar> )
 
    #xtranslate RAScan( [<x,...>] )             => hb_RAScan( <x> )
 
@@ -509,7 +513,7 @@
                                                 RETURN a ; }:eval( <x> )
    #xtranslate HGetAACompatibility( <x> )  => hb_HKeepOrder( <x> )
    #xtranslate HSetAACompatibility( [<x,...>] ) => {| h | ;;
-                                                   hb_HKeepOrder( h ) ;;
+                                                   hb_HKeepOrder( h, .T. ) ;;
                                                    RETURN .T. ; }:eval( <x> )
 
    /* inet*() functions */
