@@ -15,6 +15,7 @@ jobs:
           - bcc
           - mingw64
           - clang
+          - msvc
         cpu:
           - x86
           - x86_64
@@ -45,7 +46,14 @@ jobs:
             esac
           } >> $GITHUB_ENV
 
+      - name: Setup MSVC
+        if: matrix.compiler == 'msvc'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.cpu == 'x86' && 'x86' || 'x64' }}
+
       - name: Install packages
+        if: matrix.compiler != 'msvc'
         uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ env.MINGWxx }}
@@ -64,7 +72,7 @@ jobs:
             openssl-devel
 
       - name: 'Add packages available on 64-bit hosts only'
-        if: matrix.cpu != 'x86'
+        if: matrix.cpu != 'x86' && matrix.compiler != 'msvc'
         shell: msys2 {0}
         run: |
           pacman -S --noconfirm mingw-w64-${{ env.msys_cpu }}-postgresql
@@ -80,19 +88,22 @@ jobs:
           ref: ${{ github.event.client_payload.branch }}
 
       - run: pwd
+        if: matrix.compiler != 'msvc'
         shell: msys2 {0}
 
       - run: ls
+        if: matrix.compiler != 'msvc'
         shell: msys2 {0}
 
       - name: Prepare ccache using action
-        if: matrix.compiler != 'bcc'
+        if: matrix.compiler != 'bcc' && matrix.compiler != 'msvc'
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
           key: windows-${{ matrix.cpu }}-${{ matrix.compiler }}-${{ matrix.strictness }}-ci
           max-size: "32M"
 
       - name: Configure build shell
+        if: matrix.compiler != 'msvc'
         shell: msys2 {0}
         run: |
           set -ex
@@ -150,8 +161,19 @@ jobs:
               ;;
           esac
 
+      - name: Configure MSVC environment
+        if: matrix.compiler == 'msvc'
+        shell: cmd
+        run: |
+          set HB_BUILD_TEST=${{matrix.strictness}}
+          set HB_BUILD_VERBOSE=yes
+          set HBMK_WITH_SQLITE3=local
+          if "${{matrix.strictness}}"=="strict" (
+            set HB_USER_CFLAGS=/WX
+          )
 
       - name: Build Harbour
+        if: matrix.compiler != 'msvc'
         shell: msys2 {0}
         run: |
           echo ::group::Build Harbour
@@ -162,7 +184,19 @@ jobs:
             HB_BUILD_CONTRIBS=no \
             HB_COMPILER=${{matrix.compiler}}
 
+      - name: Build Harbour (MSVC)
+        if: matrix.compiler == 'msvc'
+        shell: cmd
+        run: |
+          echo ::group::Build Harbour
+          set HB_BUILD_TEST=${{matrix.strictness}}
+          set HB_BUILD_VERBOSE=yes
+          set HBMK_WITH_SQLITE3=local
+          if "${{matrix.strictness}}"=="strict" set HB_USER_CFLAGS=/WX
+          nmake /f Makefile.vc HB_CPU=${{matrix.cpu}} HB_BUILD_CONTRIBS=no
+
       - name: Build contribs
+        if: matrix.compiler != 'msvc'
         shell: msys2 {0}
         run: |
           echo ::group::Build contribs
@@ -173,9 +207,25 @@ jobs:
             HB_CPU=${{matrix.cpu}} \
             HB_COMPILER=${{matrix.compiler}}
 
+      - name: Build contribs (MSVC)
+        if: matrix.compiler == 'msvc'
+        shell: cmd
+        run: |
+          echo ::group::Build contribs
+          cd contrib
+          nmake /f Makefile.vc HB_CPU=${{matrix.cpu}}
+
       - name: Run tests
+        if: matrix.compiler != 'msvc'
         shell: msys2 {0}
         run: |
           echo ::group::Run tests
           set -ex
           bin/win/${{matrix.compiler}}/hbtest.exe
+
+      - name: Run tests (MSVC)
+        if: matrix.compiler == 'msvc'
+        shell: cmd
+        run: |
+          echo ::group::Run tests
+          bin\win\msvc\hbtest.exe
